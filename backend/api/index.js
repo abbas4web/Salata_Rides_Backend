@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const serverless = require('serverless-http');
 const connectDB = require('../config/db');
 const authRoutes = require('../routes/auth');
 
@@ -10,10 +11,16 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Connect to DB on each request for serverless
+// Connect DB (better way for serverless)
+let isConnected = false;
+
 app.use(async (req, res, next) => {
   try {
-    await connectDB();
+    if (!isConnected) {
+      await connectDB();
+      isConnected = true;
+      console.log("✅ MongoDB Connected");
+    }
     next();
   } catch (error) {
     res.status(500).json({ message: 'Database connection failed', error: error.message });
@@ -21,19 +28,15 @@ app.use(async (req, res, next) => {
 });
 
 app.get('/', (req, res) => {
-  res.json({ message: 'Signup API is running', status: 'ok' });
-});
-
-app.get('/api', (req, res) => {
-  res.json({ message: 'API is working', status: 'ok' });
+  res.json({ message: 'Signup API is running (Vercel)', status: 'ok' });
 });
 
 app.use('/api/auth', authRoutes);
 
-// Error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: 'Something went wrong!', error: err.message });
 });
 
-module.exports = app;
+// ✅ THIS IS THE MOST IMPORTANT LINE
+module.exports = serverless(app);
