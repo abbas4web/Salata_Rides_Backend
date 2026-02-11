@@ -6,41 +6,77 @@ const { signupValidation, validate } = require('../middleware/validation');
 
 const router = express.Router();
 
+// Test route
+router.get('/test', (req, res) => {
+  res.json({ message: 'Auth route is working', timestamp: new Date() });
+});
+
 router.post('/signup', signupValidation, validate, async (req, res) => {
   try {
     const { fullName, email, mobileNumber, gender, age, password } = req.body;
 
-    const existingUser = await User.findOne({ $or: [{ email }, { mobileNumber }] });
+    console.log('Signup request received:', { fullName, email, mobileNumber, gender });
+
+    // Check if user exists
+    const existingUser = await User.findOne({ 
+      $or: [
+        { email: email.toLowerCase() }, 
+        { mobileNumber }
+      ] 
+    });
+    
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists with this email or mobile number' });
+      return res.status(400).json({ 
+        success: false,
+        message: 'User already exists with this email or mobile number' 
+      });
     }
 
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Create user
     const user = new User({
       fullName,
-      email,
+      email: email.toLowerCase(),
       mobileNumber,
       gender,
-      age,
+      age: new Date(age),
       password: hashedPassword
     });
 
     await user.save();
+    console.log('User created:', user._id);
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    // Generate JWT
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not defined');
+    }
+
+    const token = jwt.sign(
+      { userId: user._id, email: user.email }, 
+      process.env.JWT_SECRET, 
+      { expiresIn: '7d' }
+    );
 
     res.status(201).json({
+      success: true,
       message: 'User created successfully',
       token,
       user: {
         id: user._id,
         fullName: user.fullName,
-        email: user.email
+        email: user.email,
+        mobileNumber: user.mobileNumber
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Signup error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error', 
+      error: error.message 
+    });
   }
 });
 
