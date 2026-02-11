@@ -1,3 +1,6 @@
+// This file is for LOCAL DEVELOPMENT ONLY
+// For Vercel deployment, see api/index.js
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -6,22 +9,15 @@ const authRoutes = require('./routes/auth');
 
 const app = express();
 
+// Connect to DB once for local development
+connectDB();
+
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Connect to DB on each request for serverless
-app.use(async (req, res, next) => {
-  try {
-    await connectDB();
-    next();
-  } catch (error) {
-    res.status(500).json({ message: 'Database connection failed', error: error.message });
-  }
-});
-
 app.get('/', (req, res) => {
-  res.json({ message: 'Signup API is running', status: 'ok' });
+  res.json({ message: 'Signup API is running (Local)', status: 'ok' });
 });
 
 app.use('/api/auth', authRoutes);
@@ -32,12 +28,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Something went wrong!', error: err.message });
 });
 
+// Only listen when running locally
 const PORT = process.env.PORT || 5000;
-
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-}
+app.listen(PORT, () => {
+  console.log(`🚀 Server running locally on http://localhost:${PORT}`);
+  console.log(`📝 Test signup: http://localhost:${PORT}/api/auth/signup`);
+});
 
 module.exports = app;

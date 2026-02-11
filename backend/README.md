@@ -6,20 +6,22 @@
 3. Run: `npm run dev`
 
 ## Deploy to Vercel
-1. Install Vercel CLI: `npm i -g vercel`
-2. Run: `vercel` (first time will link project)
-3. Add environment variables in Vercel dashboard:
+1. Push code to GitHub
+2. Import project in Vercel dashboard
+3. Add environment variables in Vercel:
    - MONGODB_URI
    - JWT_SECRET
    - NODE_ENV=production
-4. Deploy: `vercel --prod`
+4. Deploy
 
-Or use Vercel dashboard:
-1. Import your GitHub repo
-2. Set environment variables
-3. Deploy
+## API Endpoints
 
-## API Endpoint
+Base URL (Production): `https://salata-rides-backend.vercel.app`
+
+### Test Connection
+GET `/` or GET `/api`
+
+### Signup
 POST `/api/auth/signup`
 
 Request body:
@@ -32,5 +34,20 @@ Request body:
   "age": "1990-01-01",
   "password": "password123",
   "confirmPassword": "password123"
+}
+```
+
+Response (201):
+```json
+{
+  "success": true,
+  "message": "User created successfully",
+  "token": "eyJhbGc...",
+  "user": {
+    "id": "...",
+    "fullName": "John Doe",
+    "email": "john@example.com",
+    "mobileNumber": "+1234567890"
+  }
 }
 ```
